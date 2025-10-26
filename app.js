@@ -188,7 +188,7 @@ let port = 7560;
 }));
 // ROOT ROUTE
 app.get("/", (req, res) => {
-    res.send("Hi, I am the root route!");
+  res.redirect("/listings");
 });
 
 //ab user ke liye route create karenge
