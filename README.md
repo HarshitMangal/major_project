@@ -1,95 +1,213 @@
-# Wanderlust - Major Project 🌎✈️
+# 🌎 Wanderlust - Full-Stack Travel Listings Platform ✈️
 
-**Wanderlust** is a full-stack web application designed for listing, discovering, and booking unique homestays and hotels worldwide, similar to Airbnb. It allows users to register accounts, upload and manage their listings (complete with image uploads and maps), write reviews, and search for rentals.
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.2.0-blue.svg)](https://nodejs.org/)
+[![Express.js Version](https://img.shields.io/badge/express-v5.1.0-orange.svg)](https://expressjs.com/)
+[![Database](https://img.shields.io/badge/database-MongoDB-green.svg)](https://www.mongodb.com/)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 
----
-
-## 🚀 Features
-
-- **User Authentication**: Secure user registration (signup), login, and logout functionalities implemented using `Passport.js` and `Passport-Local-Mongoose`.
-- **Listing Management (CRUD)**:
-  - **Create**: Add new listing descriptions, prices, location, country, and images.
-  - **Read**: Explore all listed properties on the homepage, or view detailed specifications, location maps, and user reviews on the details page.
-  - **Update**: Listing owners can edit property details.
-  - **Delete**: Owner-only listing deletion.
-- **Interactive Geocoding & Map Integration**: Built-in **Mapbox API** to auto-geocode listing addresses and display interactive pins on maps.
-- **Image Storage & Uploads**: Handled via `Multer` and integrated with `Cloudinary` storage.
-- **Reviews & Ratings System**: Logged-in users can write reviews and leave star ratings for any listings.
-- **Robust Error Handling**: Customized error handling with a user-friendly error page.
-- **Session & Flash Storage**: Local session storage utilizing MongoDB (`connect-mongo`) and flashing messages (success/error alerts) using `connect-flash`.
+**Wanderlust** is a feature-rich, full-stack MVC web application designed to browse, list, and review unique properties and homestays around the globe, offering a workflow similar to Airbnb. It integrates cloud-based image hosting, interactive map geocoding, authentication, session validation, and client-side and server-side schemas.
 
 ---
 
-## 🛠️ Tech Stack
+## 🏗️ Architecture & Workflow
 
-- **Frontend**: EJS (Embedded JavaScript Templates), Bootstrap 5, EJS-Mate layouts, Custom CSS
-- **Backend**: Node.js, Express.js
-- **Database**: MongoDB, Mongoose ODM
-- **Authentication**: Passport.js, Passport-local
-- **APIs & Services**: Mapbox SDK (Geocoding), Cloudinary API (Image hosting)
+Here is a visual workflow of how Wanderlust handles requests, user authentication, media storage, maps, and database persistence:
 
----
-
-## 📂 Project Structure
-
-```text
-MAJOR_PROJECT/
-├── init/                  # Database initialization/seeding scripts (index.js, data.js)
-├── models/                # MongoDB/Mongoose Models (User, Listing, Review)
-├── publlic/               # Static assets (stylesheets, JS scripts, images)
-├── views/                 # EJS views (Layouts, Listings, Users, Errors)
-├── app.js                 # Main server/app logic
-├── middleware.js          # Authentication and redirection middleware
-├── cloudconfig.js         # Cloudinary storage configuration
-├── schema.js              # Joi validation schemas
-├── package.json           # Node dependencies and scripts
-└── .env                   # Environment variables (Ignored in Git)
+```mermaid
+graph TD
+    User([User / Browser]) -->|HTTP Request| Router[Express Router / App.js]
+    Router -->|Validation Middleware| JoiCheck{Joi Validation & Auth Check}
+    JoiCheck -->|Failed| ErrorPage[Error Renderer]
+    JoiCheck -->|Passed| Controller[Controller / Route Handlers]
+    
+    Controller -->|Fetch/Save| Database[(MongoDB / Mongoose)]
+    Controller -->|Upload Images| Cloudinary[Cloudinary API]
+    Controller -->|Address Geocoding| Mapbox[Mapbox API]
+    Controller -->|Render HTML| Views[EJS Templates / EJS-Mate]
+    
+    Views -->|Response| User
 ```
 
 ---
 
-## ⚙️ Installation & Setup
+## 🚀 Key Features
 
-To run Wanderlust locally on your machine, follow these steps:
+*   🔒 **Secure Authentication**: Signup, Login, and Logout features with session persistence and custom redirection (remembers previous path) using `passport` and `passport-local`.
+*   🏠 **Listings Management (CRUD)**:
+    *   Create listing with multi-part forms (titles, descriptions, pricing, locations, and images).
+    *   Edit/Update listing details (including uploading new images).
+    *   Delete listings (restricted to authorized owners).
+*   🗺️ **Interactive Geocoding**: Automatically translates text locations (e.g. "Paris, France") into precise geographic coordinates (Point GeoJSON) and displays them on maps using **Mapbox API**.
+*   ☁️ **Cloud Storage**: Seamless image file uploading using `Multer` combined with `Multer-Storage-Cloudinary` to save listing images directly on Cloudinary.
+*   💬 **Reviews & Ratings System**: Users can rate properties (1–5 stars) and write comments.
+*   🛡️ **Data Validation & Error Management**: Robust backend validation using `Joi` schemas, async safety wrapper `wrapAsync`, and uniform error handling page.
 
-### Prerequisites
-Make sure you have [Node.js](https://nodejs.org/) and [MongoDB](https://www.mongodb.com/) installed on your machine.
+---
 
-### 1. Clone the repository
+## 🛣️ API Reference & Route Directory
+
+Here is the complete catalog of all API routes, request types, required middleware validations, and access controls implemented in Wanderlust:
+
+### 🏠 Listings API
+
+| Method | Endpoint | Description | Middleware / Validation | Access Control |
+| :--- | :--- | :--- | :--- | :--- |
+| **GET** | `/listings` | Displays the homepage with all listing cards. | None | Public |
+| **GET** | `/listings/new` | Renders the form to add a new listing. | `isloggedin` | Registered Users |
+| **GET** | `/listings/:id` | Displays comprehensive details, reviews, owner, and map for a specific listing. | None | Public |
+| **POST** | `/listings` | Creates a new listing in the database. | `isloggedin`, `upload.single("listing[image]")`, `listingSchema` validation | Registered Users |
+| **GET** | `/listings/:id/edit` | Renders the update form containing existing listing details. | `isloggedin` | Authorized Owner |
+| **PUT** | `/listings/:id` | Updates an existing listing's information. | `isloggedin` | Authorized Owner |
+| **DELETE** | `/listings/:id` | Deletes a listing and its references from the database. | `isloggedin` | Authorized Owner |
+
+### 💬 Reviews API
+
+| Method | Endpoint | Description | Middleware / Validation | Access Control |
+| :--- | :--- | :--- | :--- | :--- |
+| **POST** | `/listings/:id/reviews` | Adds a new review comment and rating to a listing. | None | Registered Users |
+| **DELETE** | `/listings/:id/reviews/:reviewId` | Deletes a specific review and pulls it from listing arrays. | None | Registered Users / Owner |
+
+### 🔑 Authentication & User API
+
+| Method | Endpoint | Description | Middleware / Validation | Access Control |
+| :--- | :--- | :--- | :--- | :--- |
+| **GET** | `/signup` | Renders the registration/signup page. | None | Public |
+| **POST** | `/signup` | Creates a new user profile and logs them in. | Database unique check | Public |
+| **GET** | `/login` | Renders the login credential page. | None | Public |
+| **POST** | `/login` | Authenticates user login credentials. | `saveRediectUrl`, `passport.authenticate("local")` | Public |
+| **GET** | `/logout` | Terminates the user session and flashes a logout notice. | None | Registered Users |
+| **GET** | `/demouser` | Test route that registers and sends a fake user payload. | None | Development / Public |
+
+---
+
+## 🗄️ Database Schemas & Models
+
+The MongoDB database relies on three main schemas defined via Mongoose ODM:
+
+### 1. Listing (`models/listning.js`)
+Stores all homestay listings with reference keys to `Review` models and owner `User` profiles:
+```javascript
+{
+  title: { type: String, required: true },
+  description: String,
+  image: {
+    url: String,      // Cloudinary URL
+    filename: String  // Cloudinary storage identifier
+  },
+  price: Number,
+  location: String,
+  country: String,
+  review: [{ type: Schema.Types.ObjectId, ref: "Review" }],
+  owner: { type: Schema.Types.ObjectId, ref: "User" },
+  geometry: {
+    type: { type: String, enum: ["Point"], required: true },
+    coordinates: { type: [Number], required: true } // [Longitude, Latitude]
+  }
+}
+```
+
+### 2. Review (`models/review.js`)
+Maintains reviews left by listing guests:
+```javascript
+{
+  comment: String,
+  rating: { type: Number, min: 1, max: 5 },
+  createdAt: { type: Date, default: Date.now }
+}
+```
+
+### 3. User (`models/user.js`)
+Uses `passport-local-mongoose` which automatically adds `username`, `hash` (password), and `salt` fields:
+```javascript
+{
+  email: { type: String, required: true }
+}
+```
+
+---
+
+## ⚙️ Installation & Setup Guide
+
+Follow these steps to run Wanderlust on your local machine:
+
+### 📋 Prerequisites
+Make sure you have:
+*   [Node.js](https://nodejs.org/) (Version `>= 22.2.0`)
+*   [MongoDB Community Server](https://www.mongodb.com/try/download/community) installed and running locally.
+*   A [Cloudinary](https://cloudinary.com/) account (for storing uploaded images).
+*   A [Mapbox](https://www.mapbox.com/) account (for geocoding addresses and maps).
+
+---
+
+### Step 1: Clone the Project
 ```bash
 git clone https://github.com/HarshitMangal/major_project.git
 cd major_project
 ```
 
-### 2. Install dependencies
+### Step 2: Install Node Packages
 ```bash
 npm install
 ```
 
-### 3. Setup Environment Variables
-Create a `.env` file in the root directory and add the following keys with your own API credentials:
+### Step 3: Configure Environment Variables
+Create a file named `.env` in the root folder of the project:
 ```env
 CLOUD_NAME=your_cloudinary_cloud_name
 CLOUD_API_KEY=your_cloudinary_api_key
 CLOUD_API_SECRET=your_cloudinary_api_secret
 MAP_TOKEN=your_mapbox_access_token
 ATLAS_DB_URL=your_mongodb_atlas_connection_string
-SECRET=your_session_secret
+SECRET=your_express_session_secret
 ```
 
-### 4. Initialize Database Seed Data (Optional)
-If you want to seed the database with sample listings, run:
+### Step 4: Seed Sample Database Listings
+To populate your MongoDB database with preliminary data, run the initialize script:
 ```bash
 node init/index.js
 ```
 
-### 5. Start the application
+### Step 5: Start the Server
+Run the startup script:
 ```bash
 npm start
 ```
-The server will start on port `7560`. Visit `http://localhost:7560` in your web browser.
+
+Open `http://localhost:7560` on your web browser to access the app!
+
+---
+
+## 📂 Directories Layout
+
+```text
+MAJOR_PROJECT/
+├── init/                  # DB seed script & mock listings dataset
+│   ├── data.js            # Initial listings mock array
+│   └── index.js           # Seeding execution script
+├── models/                # Mongoose Database Models
+│   ├── listning.js        # Listings model
+│   ├── review.js          # Ratings & feedback model
+│   └── user.js            # User accounts authentication model
+├── publlic/               # Public-facing static resources (images, styling sheets, scripts)
+├── routes/                # Future modular routes folder
+├── utilis/                # Helper utility scripts
+│   ├── customerror.js     # Class extension representing custom error statuses
+│   └── wrapasync.js       # Express asynchronous middleware wrapper
+├── views/                 # MVC View Templates
+│   ├── layouts/           # EJS Page layout templates
+│   │   └── boilerplate.ejs # Main boilerplate wrapper template
+│   ├── listings/          # Templates for CRUD listings (index, show, edit, new)
+│   ├── users/             # Login & signup templates
+│   └── error.ejs          # Global error display EJS page
+├── app.js                 # App configuration & Server initiation file
+├── middleware.js          # Authentication and custom middlewares
+├── cloudconfig.js         # Cloudinary configuration settings
+├── schema.js              # Server-side validation schema constraints using Joi
+├── package.json           # Declared dependencies and NPM scripts
+└── .env                   # Configuration parameters (ignored by git commits)
+```
 
 ---
 
 ## 📄 License
-This project is open-source and licensed under the [ISC License](LICENSE).
+This application is open-source and released under the [ISC License](LICENSE).
