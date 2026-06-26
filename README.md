@@ -1,5 +1,7 @@
 # 🌎 Wanderlust - Full-Stack Travel Listings Platform ✈️
 
+🔗 **Live Demo**: [https://major-project-wht3.onrender.com](https://major-project-wht3.onrender.com)
+
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D22.2.0-blue.svg)](https://nodejs.org/)
 [![Express.js Version](https://img.shields.io/badge/express-v5.1.0-orange.svg)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-MongoDB-green.svg)](https://www.mongodb.com/)
